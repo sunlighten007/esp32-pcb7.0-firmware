@@ -1,0 +1,19 @@
+{
+    "firmwares": [
+        {
+            "update_version": "v0.0.2",
+            "update_file_path": "v0.0.2.bin",
+            "update_available_date": "16-11-2021",
+            "changelog": "testing",
+            "available_in_region": "us,eu"
+        }
+    ],
+    "mapping": [
+        {
+            "current_version": "v0.0.1",
+            "update_version": "v0.0.2",
+            "release_channel": "rc,stable,dev",
+            "hardware_version": "1.0.0"
+        }
+    ]
+}
