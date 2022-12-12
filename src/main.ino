@@ -546,7 +546,7 @@ void mqtt_reconnect()
   {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
-    String clientId = "ESP32Client-";
+    String clientId = "pbv7-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
     if (client.connect(clientId.c_str(),mqtt_username.c_str(),mqtt_password.c_str()))
