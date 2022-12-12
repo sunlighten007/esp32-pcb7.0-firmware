@@ -1,4 +1,3 @@
-#include <SomeSerial.h>
 
 #include <BluetoothSerial.h>
 #include<HardwareSerial.h>
@@ -6,10 +5,8 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
-
 #include <ArduinoJson.h>
 #include <string.h>
-
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WiFiClient.h>

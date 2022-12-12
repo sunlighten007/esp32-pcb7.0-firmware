@@ -1,3 +1,4 @@
 plerup/EspSoftwareSerial@^6.16.1
-bblanchon/ArduinoJson@^6.18.5
 ricaun/ArduinoUniqueID@^1.1.0
+knolleary/PubSubClient@^2.8
+bblanchon/ArduinoJson@^6.18.5
