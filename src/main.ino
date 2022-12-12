@@ -45,7 +45,8 @@ HardwareSerial Light_Serial(2);
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-const char *mqtt_server = "wss://dev-mqtt.api.sunlighten.com:8083/mqtt";
+const char *mqtt_server = "dev-mqtt.api.sunlighten.com";
+
 
 
 
@@ -489,7 +490,7 @@ void setup_mqtt_connection()
 {
   if (WiFi.status() == WL_CONNECTED)
   {
-    client.setServer(mqtt_server, 443);
+    client.setServer(mqtt_server, 1883);
     client.setCallback(mqtt_subscribe_callback);
   }
 }
