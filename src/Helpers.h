@@ -16,17 +16,15 @@
 #define FIRMWARE_UPDATE_OVER_WIFI_Characteristic "c87dc73e-1333-428f-94b2-1bbd9ea0ceb9"
 #define ENVIRONMENTAL_SENSING_SERVICE_UUID "0000181a-0000-1000-8000-00805f9b34fb"
 #define TEMPERATURE_CHARACTERISTIC_UUID "00002a6e-0000-1000-8000-00805f9b34fb"
-BLEService *environmentService;
-BLECharacteristic *temperatureCharacteristic;
-BLECharacteristic *pWIFI_STATUS_Characteristic;
+
 
 
 #define FULL_PACKET 512
-#define RXD1 17
-#define TXD1 2
-#define RXD2 21
-#define TXD2 22
-
-#define Wifi_on 12
-#define Intlight 13
-#define Extlight 15
+#define RXD1 11
+#define TXD1 10
+#define RXD2 36
+#define TXD2 37
+#define BT_ON 35
+#define Wifi_on 40
+#define Intlight 41
+#define Extlight 42
