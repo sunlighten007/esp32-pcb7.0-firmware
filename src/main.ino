@@ -8,7 +8,6 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WiFiClient.h>
-#include <ESPmDNS.h>
 #include <Update.h>
 #include <PubSubClient.h>
 #include <HTTPClient.h>
@@ -20,16 +19,16 @@
 #include "Helpers.h"
 #include "id.h"
 #include "info.h"
-BLEService *environmentService;
-BLECharacteristic *temperatureCharacteristic;
+
+
 BLECharacteristic *pWIFI_STATUS_Characteristic;
+BLECharacteristic *pPB_TO_ACP_Characteristic;
+String data_bt;
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
-HardwareSerial Heater_Serial(1);
-HardwareSerial Light_Serial(2);
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -46,7 +45,7 @@ unsigned long getTime()
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo))
   {
-    // Serial.println("Failed to obtain time");
+    
     return (0);
   }
   time(&now);
@@ -66,10 +65,10 @@ const char *second_com;
 const char *third_com;
 //*******************************
 // Dip switch values
-int way0 = 1;
+int way0 = 0;
 int way1 = 0;
 int way2 = 0;
-int acvol = 1;
+int acvol = 0;
 //*******************************
 
 boolean isExtLight;
@@ -106,15 +105,7 @@ int left_nir_flag = 0;
 int right_nir_flag = 0;
 int back_nir_flag = 0;
 // heaters current sensors value
-int LF_current = 0;
-int LM_current = 0;
-int F_current = 0;
-int FM_current = 0;
-int FF_current = 0;
-int BF_current = 0;
-int BM_current = 0;
-int RF_current = 0;
-int RM_current = 0;
+
 int Ac_Volt = 0;
 // temperature
 int cabin_temp_in = 0;
@@ -238,22 +229,25 @@ class WIFI_PASS_Callbacks : public BLECharacteristicCallbacks
   }
 };
 
-class WIFI_STATUS_Callbacks : public BLECharacteristicCallbacks
+class ACP_TO_PB_CALLBACK: public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *pCharacteristic)
+  {
+    std::string rxValue = pCharacteristic->getValue();
+    if (rxValue.length() > 0)
+    {
+      process_cmd(rxValue.c_str());
+    }
+  }
+};
+
+
+class PB_TO_ACP_CALLBACK : public BLECharacteristicCallbacks
 {
 
   void onRead(BLECharacteristic *pCharacteristic)
   {
-    // wifiSetupOnStart();
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      wifi_status = 1;
-    }
-    else
-    {
-      wifi_status = 0;
-    }
-    Serial.print(wifi_status);
-    pWIFI_STATUS_Characteristic->setValue(wifi_status);
+    pPB_TO_ACP_Characteristic->setValue(data_bt.c_str());
   }
 };
 
@@ -293,110 +287,82 @@ class OTA_OVER_BLE_CALLBACK : public BLECharacteristicCallbacks
 
 void BLE_Services()
 {
-
   Serial.println("Starting BLE Services!");
-  BLEDevice::init("SunlightenSauna-Signature");
-  digitalWrite(BT_ON, HIGH);
+  // TODO: ADD SAUNA ID TO THE BT BROADCAST NAME
+  BLEDevice::init("SunlightenSauna-Mpulse"); 
   BLEServer *pServer = BLEDevice::createServer();
-  BLEService *pWIFI_Service = pServer->createService(WIFI_SERVICE_UUID);
-  BLECharacteristic *pWIFI_SSID_Characteristic = pWIFI_Service->createCharacteristic(
-      WIFI_SSID_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_WRITE |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE |
-          BLECharacteristic::PROPERTY_BROADCAST);
-  pWIFI_SSID_Characteristic->setValue(wifi_ssid.c_str());
-  pWIFI_SSID_Characteristic->addDescriptor(new BLE2902());
-  pWIFI_SSID_Characteristic->setCallbacks(new WIFI_SSID_Callbacks());
-
-  BLECharacteristic *pWIFI_PASS_Characteristic = pWIFI_Service->createCharacteristic(
-      WIFI_PASS_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_WRITE |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE |
-          BLECharacteristic::PROPERTY_BROADCAST);
-  pWIFI_PASS_Characteristic->setValue(wifi_password.c_str());
-  pWIFI_PASS_Characteristic->addDescriptor(new BLE2902());
-  pWIFI_PASS_Characteristic->setCallbacks(new WIFI_PASS_Callbacks());
-
-  BLEService *pFirmware_Update_Over_WIFI = pServer->createService(FIRMWARE_UPDATE_OVER_WIFI_UUID);
-  BLECharacteristic *pFIRMWARE_UPDATE_OVER_WIFI_Characteristic = pFirmware_Update_Over_WIFI->createCharacteristic(
-      FIRMWARE_UPDATE_OVER_WIFI_Characteristic,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_WRITE |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE |
-          BLECharacteristic::PROPERTY_BROADCAST);
-  pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->addDescriptor(new BLE2902());
-  pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->setCallbacks(new UPDATE_FIRMWARE_CALLBACK());
-  pFirmware_Update_Over_WIFI->start();
-
-  // WIFI STATUS
-  pWIFI_STATUS_Characteristic = pWIFI_Service->createCharacteristic(
-      WIFI_STATUS_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_WRITE |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE |
-          BLECharacteristic::PROPERTY_BROADCAST);
-  pWIFI_STATUS_Characteristic->addDescriptor(new BLE2902());
-  pWIFI_STATUS_Characteristic->setCallbacks(new WIFI_STATUS_Callbacks());
-  pWIFI_Service->start();
-  // END
-
-  BLEService *pfirmwareStatusService = pServer->createService(FIRMWARE_STATUS_SERVICE_UUID);
-  BLECharacteristic *pFIRMWARE_STATUS_Characteristic = pfirmwareStatusService->createCharacteristic(
-      FIRMWARE_STATUS_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE |
-          BLECharacteristic::PROPERTY_BROADCAST);
-  pFIRMWARE_STATUS_Characteristic->setValue(String(FIRMWARE_VERSION).c_str());
-  pFIRMWARE_STATUS_Characteristic->addDescriptor(new BLE2902());
-  pfirmwareStatusService->start();
 
   BLEService *deviceIdService = pServer->createService(DEVICE_INFORMATION_SERVICE_UUID);
   deviceIdService->start();
   BLECharacteristic *deviceIdSerialNumberCharacteristic = deviceIdService->createCharacteristic(
       SERIAL_NUMBER_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_NOTIFY);
+      BLECharacteristic::PROPERTY_NOTIFY);
   deviceIdSerialNumberCharacteristic->setValue(device_id.c_str());
 
+    // Set firmware Revision Number
   BLECharacteristic *firmwareRevisionCharacteristic = deviceIdService->createCharacteristic(
       FIRMWARE_REVISION_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_NOTIFY);
+      BLECharacteristic::PROPERTY_NOTIFY);
   firmwareRevisionCharacteristic->setValue(String(FIRMWARE_VERSION).c_str());
-
+  // Set the hardware revision number
   BLECharacteristic *hardwareRevisionCharacteristic = deviceIdService->createCharacteristic(
       HARDWARE_REVISION_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_NOTIFY);
+      BLECharacteristic::PROPERTY_NOTIFY);
   hardwareRevisionCharacteristic->setValue(String(HARDWARE_VERSION).c_str());
   deviceIdService->start();
-
-  environmentService = pServer->createService(ENVIRONMENTAL_SENSING_SERVICE_UUID);
-  temperatureCharacteristic = environmentService->createCharacteristic(
-      TEMPERATURE_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
+//update firmware through the web
+  BLEService *pFirmware_Update_Over_WIFI = pServer->createService(FIRMWARE_UPDATE_OVER_WIFI_UUID);
+  BLECharacteristic *pFIRMWARE_UPDATE_OVER_WIFI_Characteristic = pFirmware_Update_Over_WIFI->createCharacteristic(
+      FIRMWARE_UPDATE_OVER_WIFI_Characteristic,
+       BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
           BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE |
           BLECharacteristic::PROPERTY_BROADCAST);
-  environmentService->start();
+  
+  pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->addDescriptor(new BLE2902());
+  pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->setCallbacks(new UPDATE_FIRMWARE_CALLBACK());
+  pFirmware_Update_Over_WIFI->start();  
 
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(WIFI_SERVICE_UUID);
-  pAdvertising->addServiceUUID(DEVICE_INFORMATION_SERVICE_UUID);
-  pAdvertising->addServiceUUID(ENVIRONMENTAL_SENSING_SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);
-  pAdvertising->setMinPreferred(0x12);
+// update firmware through BLE
+  BLEService *pFirmware_Update_Over_BLE = pServer->createService(FIRMWARE_UPDATE_OVER_BLE_UUID);
+  BLECharacteristic *pFIRMWARE_UPDATE_OVER_BLE_Characteristic = pFirmware_Update_Over_BLE->createCharacteristic(
+      FIRMWARE_UPDATE_OVER_BLE_Characteristic,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY);
+  pFIRMWARE_UPDATE_OVER_BLE_Characteristic->addDescriptor(new BLE2902());
+  pFIRMWARE_UPDATE_OVER_BLE_Characteristic->setCallbacks(new OTA_OVER_BLE_CALLBACK());
+  pFirmware_Update_Over_BLE->start();
 
-  BLEDevice::startAdvertising();
+// make communication between ACP and PB
+BLEService *pCommand_Service = pServer->createService(COMMAND_SERVICE_UUID);
+BLECharacteristic *pACP_TO_PB_Characteristic = pCommand_Service ->createCharacteristic(
+  ACP_TO_PB_CHARACTERISTIC_UUID,
+  BLECharacteristic::PROPERTY_READ |
+  BLECharacteristic::PROPERTY_WRITE |
+  BLECharacteristic::PROPERTY_NOTIFY ); 
+  pACP_TO_PB_Characteristic->addDescriptor(new BLE2902());
+  pACP_TO_PB_Characteristic->setCallbacks(new ACP_TO_PB_CALLBACK()); 
+
+BLECharacteristic *pPB_TO_ACP_Characteristic = pCommand_Service ->createCharacteristic(
+  PB_TO_ACP_CHARACTERISTIC_UUID,
+  BLECharacteristic::PROPERTY_READ |
+  BLECharacteristic::PROPERTY_WRITE |
+  BLECharacteristic::PROPERTY_NOTIFY ); 
+  pPB_TO_ACP_Characteristic->addDescriptor(new BLE2902());   
+  pPB_TO_ACP_Characteristic->setCallbacks(new PB_TO_ACP_CALLBACK());
+
+BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+pAdvertising->addServiceUUID(DEVICE_INFORMATION_SERVICE_UUID);
+pAdvertising->setScanResponse(true);
+pAdvertising->setMinPreferred(0x06);
+pAdvertising->setMinPreferred(0x12);
+BLEDevice::startAdvertising();
 }
-
 void wifiSetupOnStart()
 {
   Serial.println("Trying to setup wifi with saved wifi details");
@@ -422,8 +388,8 @@ void setup()
   generate_serial_id();
   unsigned char i;
   Serial.begin(115200);
-  Heater_Serial.begin(115200, SERIAL_8N1, RXD2, TXD2);
-  Light_Serial.begin(115200, SERIAL_8N1, RXD1, TXD1);
+  Serial1.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(115200, SERIAL_8N1, RXD1, TXD1);
   Serial.println("Device ID: " + device_id);
   preferences.begin("prefs", false);
   Serial.print("---------Firmware Version----------- ");
@@ -435,15 +401,25 @@ void setup()
   BLE_Services();
   Serial.println("--------Bluetooth Device is Ready to Pair-------");
 
-  configTime(0, 0, ntpServer);
+  
   pinMode(Intlight, OUTPUT);
   pinMode(Extlight, OUTPUT);
   pinMode(Wifi_on, OUTPUT);
   pinMode(BT_ON, OUTPUT);
+  pinMode(s0, OUTPUT); 
+  pinMode(s1, OUTPUT); 
+  pinMode(s2, OUTPUT); 
+  pinMode(s3, OUTPUT); 
+  digitalWrite(s0, LOW);
+  digitalWrite(s1, LOW);
+  digitalWrite(s2, LOW);
+  digitalWrite(s3, LOW);
   if (WiFi.status() == WL_CONNECTED)
   {
+    configTime(0, 0, ntpServer);
     setup_mqtt_connection();
   }
+
 }
 void setup_mqtt_connection()
 {
@@ -476,21 +452,16 @@ void updateWifiStatus()
 }
 uint8_t msg[500];
 bool updatingFirmware_Bluetooth = false;
-void loop()
-{
 
-  updateWifiStatus();
-  
+void loop(){
+   updateWifiStatus();
+   Serial_received();
+   if(updatingFirmware_Bluetooth)
+  return;
   epochTime = getTime();
-
-  Serial_received();
-
-  if(updatingFirmware_Bluetooth)
-    return;
-
-  delay(10000);
-
   send_raw_data();
+  
+
 }
 
 void mqtt_reconnect()
@@ -552,30 +523,104 @@ void progress(int t, int t2)
 
 void Serial_received(void)
 {
-  if (Heater_Serial.available())
+  if (Serial1.available())
   {
-    while (Heater_Serial.available())
+    while (Serial1.available())
     {
-      c = Heater_Serial.read();
+      c = Serial1.read();
       readString += c;
+      delay(10);
     }
   }
 
-  else if(Light_Serial.available())
+  else if(Serial2.available())
   {
-    while(Light_Serial.available())
+    while(Serial2.available())
     {
-      c = Light_Serial.read();
+      c = Serial2.read();
       readString += c;
+      delay(10);
     }
   }
 
-  if (readString.length()>0)
+  if (readString.length()>1)
   {
     Serial.print(readString);
     process_cmd(readString);
-    readString = "";
+    readString="";
   }
+ 
+}
+
+
+int readMux(int channel,int sig_pin,int cmd){
+  int controlPin[] = {s0, s1, s2, s3};
+
+  int muxChannel[16][4]={
+    {0,0,0,0}, //channel 0
+    {1,0,0,0}, //channel 1
+    {0,1,0,0}, //channel 2
+    {1,1,0,0}, //channel 3
+    {0,0,1,0}, //channel 4
+    {1,0,1,0}, //channel 5
+    {0,1,1,0}, //channel 6
+    {1,1,1,0}, //channel 7
+    {0,0,0,1}, //channel 8
+    {1,0,0,1}, //channel 9
+    {0,1,0,1}, //channel 10
+    {1,1,0,1}, //channel 11
+    {0,0,1,1}, //channel 12
+    {1,0,1,1}, //channel 13
+    {0,1,1,1}, //channel 14
+    {1,1,1,1}  //channel 15
+  };
+
+  //loop through the 4 sig
+  for(int i = 0; i < 4; i ++){
+    digitalWrite(controlPin[i], muxChannel[channel][i]);
+  }
+if (cmd==1){
+int totalval=0;
+for(int i =0; i< 10; i++){
+  int val = analogRead(sig_pin);
+  totalval=totalval+val;
+}
+int avg= totalval/10;
+return avg;
+}
+else if (cmd==2){
+int totalval=0;
+for(int i =0; i< 16; i++){
+  int val = analogRead(sig_pin);
+  totalval=totalval+val;
+}
+int avg= totalval/16;
+return avg;
+}
+else if(cmd==3){
+int val=digitalRead(sig_pin);
+return val;
+}
+}
+void read_raw(void){
+for(i=0;i<16;i++)
+{
+ 
+  NTC[i]=readMux(i,MUX[1],1);
+  NTC[i+16]=readMux(i,MUX[2],1);
+  }
+for(i=0;i<10;i++)
+{
+  CURRENT[i]=readMux(i,MUX[0],2);
+}
+
+
+WAY2=readMux(0,MUX[3],3);
+WAY1=readMux(1,MUX[3],3);
+WAY0=readMux(2,MUX[3],3);
+AC_VOLT=readMux(4,MUX[3],3);
+smoke_d=readMux(4,MUX[3],3);
+power_d=readMux(11,MUX[3],3);
 }
 
 void send_info(void)
@@ -595,19 +640,22 @@ void send_info(void)
 }
 void send_raw_data(void)
 {
+  read_raw();
   protocol["v"] = version_no;
   protocol["cmd"]["product_code"] = pdt_code;
   protocol["cmd"]["cmd_code"] = "SEND_RAW_DATA";
-  protocol["cmd"]["cmd_metadata"]["NTC"] = ntc_avg;
-  protocol["cmd"]["cmd_metadata"]["LF_CURRENT"] = LF_current;
-  protocol["cmd"]["cmd_metadata"]["LM_CURRENT"] = LM_current;
-  protocol["cmd"]["cmd_metadata"]["RF_CURRENT"] = RF_current;
-  protocol["cmd"]["cmd_metadata"]["RM_CURRENT"] = RM_current;
-  protocol["cmd"]["cmd_metadata"]["F_CURRENT"] = F_current;
-  protocol["cmd"]["cmd_metadata"]["FF_CURRENT"] = FF_current;
-  protocol["cmd"]["cmd_metadata"]["FM_CURRENT"] = FM_current;
-  protocol["cmd"]["cmd_metadata"]["BF_CURRENT"] = BF_current;
-  protocol["cmd"]["cmd_metadata"]["BM_CURRENT"] = BM_current;
+  for(i=0;i<32;i++){
+  protocol["cmd"]["cmd_metadata"]["NTC"][i]=NTC[i];
+  }
+  protocol["cmd"]["cmd_metadata"]["LF_CURRENT"] = CURRENT[0];
+  protocol["cmd"]["cmd_metadata"]["LM_CURRENT"] = CURRENT[1];
+  protocol["cmd"]["cmd_metadata"]["RF_CURRENT"] = CURRENT[2];
+  protocol["cmd"]["cmd_metadata"]["RM_CURRENT"] = CURRENT[3];
+  protocol["cmd"]["cmd_metadata"]["F_CURRENT"] = CURRENT[4];
+  protocol["cmd"]["cmd_metadata"]["FF_CURRENT"] = CURRENT[5];
+  protocol["cmd"]["cmd_metadata"]["FM_CURRENT"] = CURRENT[6];
+  protocol["cmd"]["cmd_metadata"]["BF_CURRENT"] = CURRENT[7];
+  protocol["cmd"]["cmd_metadata"]["BM_CURRENT"] = CURRENT[8];
   protocol["cmd"]["cmd_metadata"]["AC_VOLT"] = Ac_Volt;
   protocol["cmd"]["cmd_metadata"]["WIFI_STATUS"] = wifi_status;
   send_data();
@@ -622,9 +670,9 @@ void send_data(void)
   if (String(channel) == "<RS232>")
   {
     protocol["metadata"]["ch"] = "<RS232>";
-    if(Heater_Serial.availableForWrite()){
-    serializeJson(protocol, Heater_Serial);
-    Heater_Serial.println();
+    if(Serial1.availableForWrite()){
+    serializeJson(protocol, Serial1);
+    Serial1.println();
     }
   }
   else if (String(channel) == "<BT>")
@@ -632,6 +680,7 @@ void send_data(void)
     protocol["metadata"]["ch"] = "<BT>";
     String data_bt = "";
     serializeJson(protocol, data_bt);
+    
   }
   else if (String(channel) == "<WIFI>")
   {
@@ -744,6 +793,7 @@ void process_cmd(String command)
       right_nir_flag = received["cmd"]["cmd_metadata"]["RIGHT_NIR_FLAG"];
 
       back_nir_flag = received["cmd"]["cmd_metadata"]["BACK_NIR_FLAG"];
+      
     }
     else if (received["cmd"]["cmd_code"] == "SET_WIFI_CREDENTIAL")
     {
