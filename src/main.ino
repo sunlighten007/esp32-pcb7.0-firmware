@@ -18,11 +18,52 @@
 #include "time.h"
 #include "Helpers.h"
 #include "id.h"
-#include "info.h"
+#include "config.h"
+
+Preferences preferences;
+
+String mqtt_username="";
+String mqtt_password="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImVtYWlsSWQiOiJ5ZGhlZXJhanJhb0BnbWFpbC5jb20iLCJ1c2VySWQiOiIwOGFhY2IwNy02MGM1LTQ5ZjAtYjViZS00MTVjZjBjNzk4M2UiLCJmaXJzdE5hbWUiOiJEaGVlcmFqIiwibGFzdE5hbWUiOiJSYW8ifSwiaWF0IjoxNjY5MjgzOTE2LCJleHAiOjE4MjY5NjM5MTZ9.4JzSp6J6Bz5_s75nLGuveEsT6Na1BOr1AmsZspY_HCE";
+const char *mqtt_server = "dev-mqtt.api.sunlighten.com";
+
+void load_env(){
+  String env_from_storage = preferences.getString("env", "prod");
+  switch (env_from_storage)
+  {
+  case "dev":
+    mqtt_username= dev_mqtt_password;
+    mqtt_password= dev_mqtt_password;
+    *mqtt_server = dev_mqtt_server;
+    break;
+  case "stg":
+    mqtt_username= stg_mqtt_password;
+    mqtt_password= stg_mqtt_password;
+    *mqtt_server = stg_mqtt_server;
+    break;
+  case "prod":
+    mqtt_username= prod_mqtt_password;
+    mqtt_password= prod_mqtt_password;
+    *mqtt_server = prod_mqtt_server;
+    break;
+  
+  default:
+    mqtt_username= prod_mqtt_password;
+    mqtt_password= prod_mqtt_password;
+    *mqtt_server = prod_mqtt_server;
+    break;
+    break;
+  }
+
+}
+
+
+
 
 BLECharacteristic *pWIFI_STATUS_Characteristic;
 BLECharacteristic *pPB_TO_ACP_Characteristic;
 String data_bt;
+String env
+
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -30,7 +71,7 @@ String data_bt;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-const char *mqtt_server = "dev-mqtt.api.sunlighten.com";
+
 
 // NTP server to request epoch time
 const char *ntpServer = "pool.ntp.org";
@@ -151,7 +192,7 @@ String getStatsTopic()
   return String("saunabridge/" + device_id + "/stats");
 }
 
-Preferences preferences;
+
 
 void connect_to_wifi(String _ssid, String _wifi_password)
 {
@@ -180,6 +221,22 @@ void connect_to_wifi(String _ssid, String _wifi_password)
     wifi_status = 1;
     /*setup_mqtt_connection();*/
   }
+}
+
+int changeEnv(String _env){
+  if (_env == "dev" || _env == "stg" || _env == "prod" )
+  {
+    preferences.putString("env", _env);
+    env = _env
+    Serial.println("Rebooting to change the env");
+    ESP.restart();
+
+    
+  }else{
+    Serial.println("Invalid env value. Should be one of dev, stg or prod");
+  }
+  
+  
 }
 
 void saveWifiDetailsLocally(String ssid, String wifi_password)
@@ -382,6 +439,7 @@ void wifiSetupOnStart()
 
 void setup()
 {
+  load_env();
   generate_serial_id();
   unsigned char i;
   Serial.begin(115200);

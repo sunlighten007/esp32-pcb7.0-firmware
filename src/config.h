@@ -1,0 +1,48 @@
+const char* host = "esp32";
+String wifi_ssid = "";
+String wifi_password ="";
+int wifi_status = 0;
+const char* temp="";
+String dev_mqtt_username="";
+String dev_mqtt_password="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImVtYWlsSWQiOiJ5ZGhlZXJhanJhb0BnbWFpbC5jb20iLCJ1c2VySWQiOiIwOGFhY2IwNy02MGM1LTQ5ZjAtYjViZS00MTVjZjBjNzk4M2UiLCJmaXJzdE5hbWUiOiJEaGVlcmFqIiwibGFzdE5hbWUiOiJSYW8ifSwiaWF0IjoxNjY5MjgzOTE2LCJleHAiOjE4MjY5NjM5MTZ9.4JzSp6J6Bz5_s75nLGuveEsT6Na1BOr1AmsZspY_HCE";
+const char *dev_mqtt_server = "dev-mqtt.api.sunlighten.com";
+String stg_mqtt_username="";
+String stg_mqtt_password="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImVtYWlsSWQiOiJ5ZGhlZXJhanJhb0BnbWFpbC5jb20iLCJ1c2VySWQiOiIwOGFhY2IwNy02MGM1LTQ5ZjAtYjViZS00MTVjZjBjNzk4M2UiLCJmaXJzdE5hbWUiOiJEaGVlcmFqIiwibGFzdE5hbWUiOiJSYW8ifSwiaWF0IjoxNjY5MjgzOTE2LCJleHAiOjE4MjY5NjM5MTZ9.4JzSp6J6Bz5_s75nLGuveEsT6Na1BOr1AmsZspY_HCE";
+const char *stg_mqtt_server = "dev-mqtt.api.sunlighten.com";
+String prod_mqtt_username="";
+String prod_mqtt_password="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImVtYWlsSWQiOiJ5ZGhlZXJhanJhb0BnbWFpbC5jb20iLCJ1c2VySWQiOiIwOGFhY2IwNy02MGM1LTQ5ZjAtYjViZS00MTVjZjBjNzk4M2UiLCJmaXJzdE5hbWUiOiJEaGVlcmFqIiwibGFzdE5hbWUiOiJSYW8ifSwiaWF0IjoxNjY5MjgzOTE2LCJleHAiOjE4MjY5NjM5MTZ9.4JzSp6J6Bz5_s75nLGuveEsT6Na1BOr1AmsZspY_HCE";
+const char *prod_mqtt_server = "dev-mqtt.api.sunlighten.com";
+
+//Mux control pins
+int s0 = 23;
+int s1 = 24;
+int s2 = 25;
+int s3 = 28;
+int MUX[]={4,8,9,22};
+int NTC[32];
+int CURRENT[9];
+int WAY0=0;
+int WAY1=1;
+int WAY2=2;
+int AC_VOLT=0;
+int smoke_d=0;
+int power_d=0;
+
+void load_env();
+void generate_serial_id();
+void connect_to_wifi(String _ssid, String _wifi_password);
+void saveWifiDetailsLocally(String ssid, String wifi_password);
+void turnOnLight(boolean isIntLight,boolean isExtLight);
+void wifiSetupOnStart();
+void BLE_Services();
+void setup();
+void process_cmdR1(String command);
+void send_data();
+void send_info();
+void send_raw_data();
+void updateWifiStatus();
+void bluetooth_data();
+void datareceived();
+void ota_over_web();
+void print_values(int t, int t2);
+void setup_mqtt_connection(void);
