@@ -1,0 +1,31 @@
+{
+    "firmwares": [
+        {
+            "update_version": "v0.0.6",
+            "update_file_path": "v0.0.6.bin",
+            "update_available_date": "19-1-2022",
+            "changelog": "testing",
+            "available_in_region": "us,eu"
+        }
+    ],
+    "mapping": [
+        {
+            "current_version": "v0.0.1",
+            "update_version": "v0.0.6",
+            "release_channel": "rc,stable,dev",
+            "hardware_version": "1.0.0"
+        },
+        {
+            "current_version": "v0.0.2",
+            "update_version": "v0.0.6",
+            "release_channel": "rc,stable,dev",
+            "hardware_version": "1.0.0"
+        },
+        {
+            "current_version": "v0.0.5",
+            "update_version": "v0.0.6",
+            "release_channel": "rc,stable,dev",
+            "hardware_version": "1.0.0"
+        }
+    ]
+}
