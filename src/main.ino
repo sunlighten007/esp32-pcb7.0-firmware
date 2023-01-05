@@ -20,7 +20,6 @@
 #include "id.h"
 #include "info.h"
 
-
 BLECharacteristic *pWIFI_STATUS_Characteristic;
 BLECharacteristic *pPB_TO_ACP_Characteristic;
 String data_bt;
@@ -28,7 +27,6 @@ String data_bt;
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
-
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -45,7 +43,7 @@ unsigned long getTime()
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo))
   {
-    
+
     return (0);
   }
   time(&now);
@@ -229,7 +227,7 @@ class WIFI_PASS_Callbacks : public BLECharacteristicCallbacks
   }
 };
 
-class ACP_TO_PB_CALLBACK: public BLECharacteristicCallbacks
+class ACP_TO_PB_CALLBACK : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *pCharacteristic)
   {
@@ -240,7 +238,6 @@ class ACP_TO_PB_CALLBACK: public BLECharacteristicCallbacks
     }
   }
 };
-
 
 class PB_TO_ACP_CALLBACK : public BLECharacteristicCallbacks
 {
@@ -289,7 +286,7 @@ void BLE_Services()
 {
   Serial.println("Starting BLE Services!");
   // TODO: ADD SAUNA ID TO THE BT BROADCAST NAME
-  BLEDevice::init("SunlightenSauna-Mpulse"); 
+  BLEDevice::init("SunlightenSauna-Mpulse");
   BLEServer *pServer = BLEDevice::createServer();
 
   BLEService *deviceIdService = pServer->createService(DEVICE_INFORMATION_SERVICE_UUID);
@@ -297,37 +294,37 @@ void BLE_Services()
   BLECharacteristic *deviceIdSerialNumberCharacteristic = deviceIdService->createCharacteristic(
       SERIAL_NUMBER_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-      BLECharacteristic::PROPERTY_NOTIFY);
+          BLECharacteristic::PROPERTY_NOTIFY);
   deviceIdSerialNumberCharacteristic->setValue(device_id.c_str());
 
-    // Set firmware Revision Number
+  // Set firmware Revision Number
   BLECharacteristic *firmwareRevisionCharacteristic = deviceIdService->createCharacteristic(
       FIRMWARE_REVISION_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-      BLECharacteristic::PROPERTY_NOTIFY);
+          BLECharacteristic::PROPERTY_NOTIFY);
   firmwareRevisionCharacteristic->setValue(String(FIRMWARE_VERSION).c_str());
   // Set the hardware revision number
   BLECharacteristic *hardwareRevisionCharacteristic = deviceIdService->createCharacteristic(
       HARDWARE_REVISION_STRING_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
-      BLECharacteristic::PROPERTY_NOTIFY);
+          BLECharacteristic::PROPERTY_NOTIFY);
   hardwareRevisionCharacteristic->setValue(String(HARDWARE_VERSION).c_str());
   deviceIdService->start();
-//update firmware through the web
+  // update firmware through the web
   BLEService *pFirmware_Update_Over_WIFI = pServer->createService(FIRMWARE_UPDATE_OVER_WIFI_UUID);
   BLECharacteristic *pFIRMWARE_UPDATE_OVER_WIFI_Characteristic = pFirmware_Update_Over_WIFI->createCharacteristic(
       FIRMWARE_UPDATE_OVER_WIFI_Characteristic,
-       BLECharacteristic::PROPERTY_READ |
+      BLECharacteristic::PROPERTY_READ |
           BLECharacteristic::PROPERTY_WRITE |
           BLECharacteristic::PROPERTY_NOTIFY |
           BLECharacteristic::PROPERTY_INDICATE |
           BLECharacteristic::PROPERTY_BROADCAST);
-  
+
   pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->addDescriptor(new BLE2902());
   pFIRMWARE_UPDATE_OVER_WIFI_Characteristic->setCallbacks(new UPDATE_FIRMWARE_CALLBACK());
-  pFirmware_Update_Over_WIFI->start();  
+  pFirmware_Update_Over_WIFI->start();
 
-// update firmware through BLE
+  // update firmware through BLE
   BLEService *pFirmware_Update_Over_BLE = pServer->createService(FIRMWARE_UPDATE_OVER_BLE_UUID);
   BLECharacteristic *pFIRMWARE_UPDATE_OVER_BLE_Characteristic = pFirmware_Update_Over_BLE->createCharacteristic(
       FIRMWARE_UPDATE_OVER_BLE_Characteristic,
@@ -338,30 +335,30 @@ void BLE_Services()
   pFIRMWARE_UPDATE_OVER_BLE_Characteristic->setCallbacks(new OTA_OVER_BLE_CALLBACK());
   pFirmware_Update_Over_BLE->start();
 
-// make communication between ACP and PB
-BLEService *pCommand_Service = pServer->createService(COMMAND_SERVICE_UUID);
-BLECharacteristic *pACP_TO_PB_Characteristic = pCommand_Service ->createCharacteristic(
-  ACP_TO_PB_CHARACTERISTIC_UUID,
-  BLECharacteristic::PROPERTY_READ |
-  BLECharacteristic::PROPERTY_WRITE |
-  BLECharacteristic::PROPERTY_NOTIFY ); 
+  // make communication between ACP and PB
+  BLEService *pCommand_Service = pServer->createService(COMMAND_SERVICE_UUID);
+  BLECharacteristic *pACP_TO_PB_Characteristic = pCommand_Service->createCharacteristic(
+      ACP_TO_PB_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY);
   pACP_TO_PB_Characteristic->addDescriptor(new BLE2902());
-  pACP_TO_PB_Characteristic->setCallbacks(new ACP_TO_PB_CALLBACK()); 
+  pACP_TO_PB_Characteristic->setCallbacks(new ACP_TO_PB_CALLBACK());
 
-BLECharacteristic *pPB_TO_ACP_Characteristic = pCommand_Service ->createCharacteristic(
-  PB_TO_ACP_CHARACTERISTIC_UUID,
-  BLECharacteristic::PROPERTY_READ |
-  BLECharacteristic::PROPERTY_WRITE |
-  BLECharacteristic::PROPERTY_NOTIFY ); 
-  pPB_TO_ACP_Characteristic->addDescriptor(new BLE2902());   
+  BLECharacteristic *pPB_TO_ACP_Characteristic = pCommand_Service->createCharacteristic(
+      PB_TO_ACP_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY);
+  pPB_TO_ACP_Characteristic->addDescriptor(new BLE2902());
   pPB_TO_ACP_Characteristic->setCallbacks(new PB_TO_ACP_CALLBACK());
 
-BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-pAdvertising->addServiceUUID(DEVICE_INFORMATION_SERVICE_UUID);
-pAdvertising->setScanResponse(true);
-pAdvertising->setMinPreferred(0x06);
-pAdvertising->setMinPreferred(0x12);
-BLEDevice::startAdvertising();
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(DEVICE_INFORMATION_SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);
+  pAdvertising->setMinPreferred(0x12);
+  BLEDevice::startAdvertising();
 }
 void wifiSetupOnStart()
 {
@@ -401,15 +398,14 @@ void setup()
   BLE_Services();
   Serial.println("--------Bluetooth Device is Ready to Pair-------");
 
-  
   pinMode(Intlight, OUTPUT);
   pinMode(Extlight, OUTPUT);
   pinMode(Wifi_on, OUTPUT);
   pinMode(BT_ON, OUTPUT);
-  pinMode(s0, OUTPUT); 
-  pinMode(s1, OUTPUT); 
-  pinMode(s2, OUTPUT); 
-  pinMode(s3, OUTPUT); 
+  pinMode(s0, OUTPUT);
+  pinMode(s1, OUTPUT);
+  pinMode(s2, OUTPUT);
+  pinMode(s3, OUTPUT);
   digitalWrite(s0, LOW);
   digitalWrite(s1, LOW);
   digitalWrite(s2, LOW);
@@ -419,7 +415,6 @@ void setup()
     configTime(0, 0, ntpServer);
     setup_mqtt_connection();
   }
-
 }
 void setup_mqtt_connection()
 {
@@ -453,15 +448,14 @@ void updateWifiStatus()
 uint8_t msg[500];
 bool updatingFirmware_Bluetooth = false;
 
-void loop(){
-   updateWifiStatus();
-   Serial_received();
-   if(updatingFirmware_Bluetooth)
-  return;
+void loop()
+{
+  updateWifiStatus();
+  Serial_received();
+  if (updatingFirmware_Bluetooth)
+    return;
   epochTime = getTime();
   send_raw_data();
-  
-
 }
 
 void mqtt_reconnect()
@@ -533,9 +527,9 @@ void Serial_received(void)
     }
   }
 
-  else if(Serial2.available())
+  else if (Serial2.available())
   {
-    while(Serial2.available())
+    while (Serial2.available())
     {
       c = Serial2.read();
       readString += c;
@@ -543,84 +537,89 @@ void Serial_received(void)
     }
   }
 
-  if (readString.length()>1)
+  if (readString.length() > 1)
   {
     Serial.print(readString);
     process_cmd(readString);
-    readString="";
+    readString = "";
   }
- 
 }
 
-
-int readMux(int channel,int sig_pin,int cmd){
+int readMux(int channel, int sig_pin, int cmd)
+{
   int controlPin[] = {s0, s1, s2, s3};
 
-  int muxChannel[16][4]={
-    {0,0,0,0}, //channel 0
-    {1,0,0,0}, //channel 1
-    {0,1,0,0}, //channel 2
-    {1,1,0,0}, //channel 3
-    {0,0,1,0}, //channel 4
-    {1,0,1,0}, //channel 5
-    {0,1,1,0}, //channel 6
-    {1,1,1,0}, //channel 7
-    {0,0,0,1}, //channel 8
-    {1,0,0,1}, //channel 9
-    {0,1,0,1}, //channel 10
-    {1,1,0,1}, //channel 11
-    {0,0,1,1}, //channel 12
-    {1,0,1,1}, //channel 13
-    {0,1,1,1}, //channel 14
-    {1,1,1,1}  //channel 15
+  int muxChannel[16][4] = {
+      {0, 0, 0, 0}, // channel 0
+      {1, 0, 0, 0}, // channel 1
+      {0, 1, 0, 0}, // channel 2
+      {1, 1, 0, 0}, // channel 3
+      {0, 0, 1, 0}, // channel 4
+      {1, 0, 1, 0}, // channel 5
+      {0, 1, 1, 0}, // channel 6
+      {1, 1, 1, 0}, // channel 7
+      {0, 0, 0, 1}, // channel 8
+      {1, 0, 0, 1}, // channel 9
+      {0, 1, 0, 1}, // channel 10
+      {1, 1, 0, 1}, // channel 11
+      {0, 0, 1, 1}, // channel 12
+      {1, 0, 1, 1}, // channel 13
+      {0, 1, 1, 1}, // channel 14
+      {1, 1, 1, 1}  // channel 15
   };
 
-  //loop through the 4 sig
-  for(int i = 0; i < 4; i ++){
+  // loop through the 4 sig
+  for (int i = 0; i < 4; i++)
+  {
     digitalWrite(controlPin[i], muxChannel[channel][i]);
   }
-if (cmd==1){
-int totalval=0;
-for(int i =0; i< 10; i++){
-  int val = analogRead(sig_pin);
-  totalval=totalval+val;
-}
-int avg= totalval/10;
-return avg;
-}
-else if (cmd==2){
-int totalval=0;
-for(int i =0; i< 16; i++){
-  int val = analogRead(sig_pin);
-  totalval=totalval+val;
-}
-int avg= totalval/16;
-return avg;
-}
-else if(cmd==3){
-int val=digitalRead(sig_pin);
-return val;
-}
-}
-void read_raw(void){
-for(i=0;i<16;i++)
-{
- 
-  NTC[i]=readMux(i,MUX[1],1);
-  NTC[i+16]=readMux(i,MUX[2],1);
+  if (cmd == 1)
+  {
+    int totalval = 0;
+    for (int i = 0; i < 10; i++)
+    {
+      int val = analogRead(sig_pin);
+      totalval = totalval + val;
+    }
+    int avg = totalval / 10;
+    return avg;
   }
-for(i=0;i<10;i++)
-{
-  CURRENT[i]=readMux(i,MUX[0],2);
+  else if (cmd == 2)
+  {
+    int totalval = 0;
+    for (int i = 0; i < 16; i++)
+    {
+      int val = analogRead(sig_pin);
+      totalval = totalval + val;
+    }
+    int avg = totalval / 16;
+    return avg;
+  }
+  else if (cmd == 3)
+  {
+    int val = digitalRead(sig_pin);
+    return val;
+  }
 }
+void read_raw(void)
+{
+  for (i = 0; i < 16; i++)
+  {
 
+    NTC[i] = readMux(i, MUX[1], 1);
+    NTC[i + 16] = readMux(i, MUX[2], 1);
+  }
+  for (i = 0; i < 10; i++)
+  {
+    CURRENT[i] = readMux(i, MUX[0], 2);
+  }
 
-WAY2=readMux(0,MUX[3],3);
-WAY1=readMux(1,MUX[3],3);
-WAY0=readMux(2,MUX[3],3);
-AC_VOLT=readMux(4,MUX[3],3);
-smoke_d=readMux(4,MUX[3],3);
-power_d=readMux(11,MUX[3],3);
+  WAY2 = readMux(0, MUX[3], 3);
+  WAY1 = readMux(1, MUX[3], 3);
+  WAY0 = readMux(2, MUX[3], 3);
+  AC_VOLT = readMux(4, MUX[3], 3);
+  smoke_d = readMux(4, MUX[3], 3);
+  power_d = readMux(11, MUX[3], 3);
 }
 
 void send_info(void)
@@ -644,8 +643,9 @@ void send_raw_data(void)
   protocol["v"] = version_no;
   protocol["cmd"]["product_code"] = pdt_code;
   protocol["cmd"]["cmd_code"] = "SEND_RAW_DATA";
-  for(i=0;i<32;i++){
-  protocol["cmd"]["cmd_metadata"]["NTC"][i]=NTC[i];
+  for (i = 0; i < 32; i++)
+  {
+    protocol["cmd"]["cmd_metadata"]["NTC"][i] = NTC[i];
   }
   protocol["cmd"]["cmd_metadata"]["LF_CURRENT"] = CURRENT[0];
   protocol["cmd"]["cmd_metadata"]["LM_CURRENT"] = CURRENT[1];
@@ -670,9 +670,10 @@ void send_data(void)
   if (String(channel) == "<RS232>")
   {
     protocol["metadata"]["ch"] = "<RS232>";
-    if(Serial1.availableForWrite()){
-    serializeJson(protocol, Serial1);
-    Serial1.println();
+    if (Serial1.availableForWrite())
+    {
+      serializeJson(protocol, Serial1);
+      Serial1.println();
     }
   }
   else if (String(channel) == "<BT>")
@@ -680,7 +681,6 @@ void send_data(void)
     protocol["metadata"]["ch"] = "<BT>";
     String data_bt = "";
     serializeJson(protocol, data_bt);
-    
   }
   else if (String(channel) == "<WIFI>")
   {
@@ -793,7 +793,6 @@ void process_cmd(String command)
       right_nir_flag = received["cmd"]["cmd_metadata"]["RIGHT_NIR_FLAG"];
 
       back_nir_flag = received["cmd"]["cmd_metadata"]["BACK_NIR_FLAG"];
-      
     }
     else if (received["cmd"]["cmd_code"] == "SET_WIFI_CREDENTIAL")
     {
