@@ -192,7 +192,7 @@ void saveWifiDetailsLocally(String ssid, String wifi_password)
   Serial.println("Wifi Details saved locally");
 }
 
-void fn(int t, int t2)
+void print_values(int t, int t2)
 {
 
   Serial.print(t);
@@ -902,7 +902,7 @@ void ota_over_web()
 
   Serial.print("----22---update.begin()----------- COntent len->  ");
   Serial.print(contentLength);
-  Update.onProgress(fn);
+  Update.onProgress(print_values);
   Serial.println("onPress added now writing");
   int written = Update.writeStream(wifi_client);
 

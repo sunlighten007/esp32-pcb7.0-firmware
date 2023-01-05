@@ -35,5 +35,5 @@ void updateWifiStatus();
 void bluetooth_data();
 void datareceived();
 void ota_over_web();
-void fn(int t, int t2);
+void print_values(int t, int t2);
 void setup_mqtt_connection(void);
