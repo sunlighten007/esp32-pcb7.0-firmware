@@ -19,39 +19,37 @@
 #include "Helpers.h"
 #include "id.h"
 #include "config.h"
+#include "FIRMIR.h"
 
 Preferences preferences;
-
+int heat_on;
 String mqtt_username="";
 String mqtt_password="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImVtYWlsSWQiOiJ5ZGhlZXJhanJhb0BnbWFpbC5jb20iLCJ1c2VySWQiOiIwOGFhY2IwNy02MGM1LTQ5ZjAtYjViZS00MTVjZjBjNzk4M2UiLCJmaXJzdE5hbWUiOiJEaGVlcmFqIiwibGFzdE5hbWUiOiJSYW8ifSwiaWF0IjoxNjY5MjgzOTE2LCJleHAiOjE4MjY5NjM5MTZ9.4JzSp6J6Bz5_s75nLGuveEsT6Na1BOr1AmsZspY_HCE";
 const char *mqtt_server = "dev-mqtt.api.sunlighten.com";
 
 void load_env(){
   String env_from_storage = preferences.getString("env", "prod");
-  switch (env_from_storage)
-  {
-  case "dev":
+  if(env_from_storage=="dev"){
     mqtt_username= dev_mqtt_password;
     mqtt_password= dev_mqtt_password;
-    *mqtt_server = dev_mqtt_server;
-    break;
-  case "stg":
+    mqtt_server = dev_mqtt_server;
+}
+ else if(env_from_storage=="stg"){
     mqtt_username= stg_mqtt_password;
     mqtt_password= stg_mqtt_password;
-    *mqtt_server = stg_mqtt_server;
-    break;
-  case "prod":
+    mqtt_server = stg_mqtt_server;
+  }
+  else if(env_from_storage=="prod"){
     mqtt_username= prod_mqtt_password;
     mqtt_password= prod_mqtt_password;
-    *mqtt_server = prod_mqtt_server;
-    break;
+    mqtt_server = prod_mqtt_server;
+  }
   
-  default:
+  else{
     mqtt_username= prod_mqtt_password;
     mqtt_password= prod_mqtt_password;
-    *mqtt_server = prod_mqtt_server;
-    break;
-    break;
+    mqtt_server = prod_mqtt_server;
+    
   }
 
 }
@@ -62,12 +60,7 @@ void load_env(){
 BLECharacteristic *pWIFI_STATUS_Characteristic;
 BLECharacteristic *pPB_TO_ACP_Characteristic;
 String data_bt;
-String env
 
-
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
-#endif
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -130,6 +123,7 @@ bool UPDATE_OTA_OVER_CLASSIC = false;
 // heaters intensity(0-10)
 int all_mir_inten = 0;
 int all_fir_inten = 0;
+int all_nir_inten =0;
 int LF_inten = 0;
 int LM_inten = 0;
 int F_inten = 0;
@@ -143,6 +137,7 @@ int RM_inten = 0;
 int left_nir_flag = 0;
 int right_nir_flag = 0;
 int back_nir_flag = 0;
+
 // heaters current sensors value
 
 int Ac_Volt = 0;
@@ -223,11 +218,11 @@ void connect_to_wifi(String _ssid, String _wifi_password)
   }
 }
 
-int changeEnv(String _env){
+void  changeEnv(String _env){
   if (_env == "dev" || _env == "stg" || _env == "prod" )
   {
     preferences.putString("env", _env);
-    env = _env
+    String env = _env;
     Serial.println("Rebooting to change the env");
     ESP.restart();
 
@@ -680,6 +675,246 @@ void read_raw(void)
   power_d = readMux(11, MUX[3], 3);
 }
 
+void turn_on_Heaters(int Heater_pin,int Heater_on){
+  if(Heater_on){
+    digitalWrite(Heater_pin,HIGH);
+
+  }
+  else{
+    digitalWrite(Heater_pin,LOW);
+  }
+
+}
+
+
+void FIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
+{
+
+    switch(heater_int)
+    {
+            case   1:
+            {
+                heat_on=heat_temp_pro(temp,FIR_1_TH,FIR_1_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }       
+            case   2:
+            {
+                heat_on=heat_temp_pro(temp,FIR_2_TH,FIR_2_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            case   3:
+            {
+                heat_on=heat_temp_pro(temp,FIR_3_TH,FIR_3_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   4:
+            {
+                heat_on=heat_temp_pro(temp,FIR_4_TH,FIR_4_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            
+            case   5:
+            {
+                heat_on=heat_temp_pro(temp,FIR_5_TH,FIR_5_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   6:
+            {
+                heat_on=heat_temp_pro(temp,FIR_6_TH,FIR_6_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }       
+            case   7:
+            {
+                heat_on=heat_temp_pro(temp,FIR_7_TH,FIR_7_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            case   8:
+            {
+                heat_on=heat_temp_pro(temp,FIR_8_TH,FIR_8_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   9:
+            {
+                heat_on=heat_temp_pro(temp,FIR_9_TH,FIR_9_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            
+            case   10:
+            {
+                heat_on=heat_temp_pro(temp,FIR_10_TH,FIR_10_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            default:
+            {
+                heat_on=0;
+                turn_on_Heaters(Heater_pin,heat_on);
+                break; 
+            }
+    }
+
+}
+
+void heat_temp_pro(unsigned int temp ,unsigned  int  TEM_H,unsigned  int TEM_L)
+{
+    if(temp<TEM_H)   return 0;
+    else
+    {
+        if(temp>TEM_L)  return 1;
+    
+    }
+
+}
+void MIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
+{
+
+    switch(heater_int)
+    {
+            case   1:
+            {
+                heat_on=heat_temp_pro(temp,MIR_1_TH,MIR_1_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }       
+            case   2:
+            {
+                heat_on=heat_temp_pro(temp,MIR_2_TH,MIR_2_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            case   3:
+            {
+                heat_on=heat_temp_pro(temp,MIR_3_TH,MIR_3_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   4:
+            {
+                heat_on=heat_temp_pro(temp,MIR_4_TH,MIR_4_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            
+            case   5:
+            {
+                heat_on=heat_temp_pro(temp,MIR_5_TH,MIR_5_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   6:
+            {
+                heat_on=heat_temp_pro(temp,MIR_6_TH,MIR_6_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }       
+            case   7:
+            {
+                heat_on=heat_temp_pro(temp,MIR_7_TH,MIR_7_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            case   8:
+            {
+                heat_on=heat_temp_pro(temp,MIR_8_TH,MIR_8_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            case   9:
+            {
+                heat_on=heat_temp_pro(temp,FIR_9_TH,FIR_9_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            }    
+            
+            case   10:
+            {
+                heat_on=heat_temp_pro(temp,MIR_10_TH,MIR_10_TL);
+                turn_on_Heaters(Heater_pin,heat_on);
+                break;          
+            } 
+            
+            default:
+            {
+                heat_on=0;
+                turn_on_Heaters(Heater_pin,heat_on);
+                break; 
+            }
+    }
+
+}
+
+void start_custom_program(){
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void start_custom_program(){
+FIR_Heater_inten(NTC[2],BF_inten,Heaters_pin[0]);
+MIR_Heater_inten(NTC[1],BM_inten,Heaters_pin[1]);
+FIR_Heater_inten(NTC[23],LF_inten,Heaters_pin[2]);
+MIR_Heater_inten(NTC[22],LM_inten,Heaters_pin[3]);
+FIR_Heater_inten(NTC[29],RF_inten,Heaters_pin[4]);
+MIR_Heater_inten(NTC[28],RM_inten,Heaters_pin[5]);
+FIR_Heater_inten(NTC[19],F_inten,Heaters_pin[6]);
+FIR_Heater_inten(NTC[17],FF_inten,Heaters_pin[7]);
+FIR_Heater_inten(NTC[16],FM_inten,Heaters_pin[8]);
+turn_on_Heaters(Heaters_pin[9],left_nir_flag);
+turn_on_Heaters(Heaters_pin[10],right_nir_flag);
+turn_on_Heaters(Heaters_pin[11],back_nir_flag);
+
+}
+
+void start_predefined_program(){
+FIR_Heater_inten(NTC[2],all_fir_inten,Heaters_pin[0]);
+MIR_Heater_inten(NTC[1],all_mir_inten,Heaters_pin[1]);
+FIR_Heater_inten(NTC[23],all_fir_inten,Heaters_pin[2]);
+MIR_Heater_inten(NTC[22],all_mir_inten,Heaters_pin[3]);
+FIR_Heater_inten(NTC[29],all_fir_inten,Heaters_pin[4]);
+MIR_Heater_inten(NTC[28],all_mir_inten,Heaters_pin[5]);
+FIR_Heater_inten(NTC[19],all_fir_inten,Heaters_pin[6]);
+FIR_Heater_inten(NTC[17],all_mir_inten,Heaters_pin[8]);
+turn_on_Heaters(Heaters_pin[9],all_nir_flag);
+turn_on_Heaters(Heaters_pin[10],all_nir_flag);
+turn_on_Heaters(Heaters_pin[11],all_nir_flag);
+
+}
+
+
+
+
+
+
+
+
+
 void send_info(void)
 {
   protocol["v"] = version_no;
@@ -832,6 +1067,8 @@ void process_cmd(String command)
       right_nir_flag = received["cmd"]["cmd_metadata"]["RIGHT_NIR_FLAG"];
 
       back_nir_flag = received["cmd"]["cmd_metadata"]["BACK_NIR_FLAG"];
+      
+     start_custom_program();
     }
     else if (received["cmd"]["cmd_code"] == "START_PREDEFINED_PROGRAM")
     {
@@ -846,11 +1083,9 @@ void process_cmd(String command)
 
       all_mir_inten = received["cmd"]["cmd_metadata"]["ALL_FIR_INTEN"];
 
-      left_nir_flag = received["cmd"]["cmd_metadata"]["LEFT_NIR_FLAG"];
-
-      right_nir_flag = received["cmd"]["cmd_metadata"]["RIGHT_NIR_FLAG"];
-
-      back_nir_flag = received["cmd"]["cmd_metadata"]["BACK_NIR_FLAG"];
+      all_nir_flag = received["cmd"]["cmd_metadata"]["ALL_NIR_FLAG"];
+      
+      start_predefined_program();
     }
     else if (received["cmd"]["cmd_code"] == "SET_WIFI_CREDENTIAL")
     {

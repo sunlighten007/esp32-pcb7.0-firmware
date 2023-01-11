@@ -21,6 +21,7 @@ int s3 = 28;
 int MUX[]={4,8,9,22};
 int NTC[32];
 int CURRENT[9];
+int Heaters_pin[9]={18,19,5,6,20,21,7,17,12,31,30,29};
 int WAY0=0;
 int WAY1=1;
 int WAY2=2;
