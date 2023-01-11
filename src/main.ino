@@ -123,7 +123,7 @@ bool UPDATE_OTA_OVER_CLASSIC = false;
 // heaters intensity(0-10)
 int all_mir_inten = 0;
 int all_fir_inten = 0;
-int all_nir_inten =0;
+int all_nir_flag=0;
 int LF_inten = 0;
 int LM_inten = 0;
 int F_inten = 0;
@@ -687,7 +687,7 @@ void turn_on_Heaters(int Heater_pin,int Heater_on){
 }
 
 
-void FIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
+void FIR_Heater_inten(int temp,int heater_int,int Heater_pin)
 {
 
     switch(heater_int)
@@ -768,17 +768,18 @@ void FIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
 
 }
 
-void heat_temp_pro(unsigned int temp ,unsigned  int  TEM_H,unsigned  int TEM_L)
+int heat_temp_pro(unsigned int temp ,unsigned  int  TEM_H,unsigned  int TEM_L)
 {
     if(temp<TEM_H)   return 0;
     else
     {
         if(temp>TEM_L)  return 1;
+        else return 0;
     
     }
 
 }
-void MIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
+void MIR_Heater_inten(int temp,int heater_int,int Heater_pin)
 {
 
     switch(heater_int)
@@ -860,23 +861,6 @@ void MIR_Heater_inten(int temp,int heater_int,int,int Heater_pin)
 }
 
 void start_custom_program(){
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void start_custom_program(){
 FIR_Heater_inten(NTC[2],BF_inten,Heaters_pin[0]);
 MIR_Heater_inten(NTC[1],BM_inten,Heaters_pin[1]);
 FIR_Heater_inten(NTC[23],LF_inten,Heaters_pin[2]);
@@ -885,7 +869,7 @@ FIR_Heater_inten(NTC[29],RF_inten,Heaters_pin[4]);
 MIR_Heater_inten(NTC[28],RM_inten,Heaters_pin[5]);
 FIR_Heater_inten(NTC[19],F_inten,Heaters_pin[6]);
 FIR_Heater_inten(NTC[17],FF_inten,Heaters_pin[7]);
-FIR_Heater_inten(NTC[16],FM_inten,Heaters_pin[8]);
+MIR_Heater_inten(NTC[16],FM_inten,Heaters_pin[8]);
 turn_on_Heaters(Heaters_pin[9],left_nir_flag);
 turn_on_Heaters(Heaters_pin[10],right_nir_flag);
 turn_on_Heaters(Heaters_pin[11],back_nir_flag);
@@ -900,7 +884,8 @@ MIR_Heater_inten(NTC[22],all_mir_inten,Heaters_pin[3]);
 FIR_Heater_inten(NTC[29],all_fir_inten,Heaters_pin[4]);
 MIR_Heater_inten(NTC[28],all_mir_inten,Heaters_pin[5]);
 FIR_Heater_inten(NTC[19],all_fir_inten,Heaters_pin[6]);
-FIR_Heater_inten(NTC[17],all_mir_inten,Heaters_pin[8]);
+FIR_Heater_inten(NTC[17],all_mir_inten,Heaters_pin[7]);
+MIR_Heater_inten(NTC[17],all_mir_inten,Heaters_pin[8]);
 turn_on_Heaters(Heaters_pin[9],all_nir_flag);
 turn_on_Heaters(Heaters_pin[10],all_nir_flag);
 turn_on_Heaters(Heaters_pin[11],all_nir_flag);

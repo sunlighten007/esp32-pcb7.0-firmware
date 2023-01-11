@@ -59,7 +59,7 @@
 #define      MIR_6_TL                      146   //125
   
 #define      MIR_7_TH                      93   //145
-#define      FIR_7_TL                      116   //135
+#define      MIR_7_TL                      116   //135
   
 #define     MIR_8_TH                      75   //155
 #define      MIR_8_TL                      93   //145
